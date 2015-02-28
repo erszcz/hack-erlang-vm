@@ -1,0 +1,12 @@
+[package]
+name = "dream"
+version = "0.0.1"
+authors = ["Radek Szymczyszyn <lavrin@gmail.com>"]
+
+[lib]
+name = "dream"
+path = "src/dream/lib.rs"
+
+[[bin]]
+name = "idream"
+path = "src/bin/idream.rs"
