@@ -92,6 +92,10 @@ impl ExportTable {
         }
     }
 
+    fn list(&self) -> Vec<(MFA, CodeIndex)> {
+        self.mfa_to_ci.iter().map(|(k,v)| (*k, *v)).collect()
+    }
+
 }
 
 #[test]
@@ -107,4 +111,18 @@ fn get_exported_function() {
     let mfa = (0, 0, 0);
     et.put(mfa, 0);
     assert_eq!(Some (0), et.get(mfa));
+}
+
+#[test]
+fn list_exports() {
+    let mut et = ExportTable::new();
+    let mfa1 = (0,0,0);
+    let mfa2 = (0,1,2);
+    et.put(mfa1, 0);
+    et.put(mfa2, 1);
+    let mut example = vec![(mfa1, 0), (mfa2, 1)];
+    example.sort();
+    let mut actual = et.list();
+    actual.sort();
+    assert_eq!(example, actual);
 }
