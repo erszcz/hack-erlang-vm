@@ -2,9 +2,12 @@ use std::collections::HashMap;
 
 struct Emu {
     pub atoms: AtomTable,
-    //pub exports: ExportTable,
+    pub exports: ExportTable,
     //pub code: CodeTable
 }
+
+type AtomIndex = usize;
+type Atom = String;
 
 struct AtomTable {
     // index to atom
@@ -13,8 +16,15 @@ struct AtomTable {
     a_to_i: HashMap<Atom, AtomIndex>
 }
 
-type AtomIndex = usize;
-type Atom = String;
+type Module = AtomIndex;
+type Function = AtomIndex;
+type Arity = usize;
+type MFA = (Module, Function, Arity);
+type CodeIndex = usize;
+
+struct ExportTable {
+    mfa_to_ci: HashMap<MFA, CodeIndex>
+}
 
 impl AtomTable {
 
@@ -63,4 +73,38 @@ fn list_atoms() {
     assert_eq!(vec![(0, "atom0".to_string()),
                     (1, "atom1".to_string())],
                atoms.list());
+}
+
+impl ExportTable {
+
+    fn new() -> ExportTable {
+        ExportTable { mfa_to_ci: HashMap::new() }
+    }
+
+    fn put(&mut self, mfa: MFA, code_index: CodeIndex) {
+        self.mfa_to_ci.insert(mfa, code_index);
+    }
+
+    fn get(&self, mfa: MFA) -> Option<CodeIndex> {
+        match self.mfa_to_ci.get(&mfa) {
+            Some (index) => Some (*index),
+            None => None
+        }
+    }
+
+}
+
+#[test]
+fn put_exported_function() {
+    let mut et = ExportTable::new();
+    et.put((0, 0, 0), 0);
+    // should pass without panicking
+}
+
+#[test]
+fn get_exported_function() {
+    let mut et = ExportTable::new();
+    let mfa = (0, 0, 0);
+    et.put(mfa, 0);
+    assert_eq!(Some (0), et.get(mfa));
 }
