@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+mod beam;
+
 struct Emu {
     pub atoms: AtomTable,
     pub exports: ExportTable,
