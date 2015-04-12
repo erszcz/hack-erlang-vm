@@ -65,11 +65,13 @@ fn load_header(buf: &Vec<u8>) -> BeamHeader {
 
 fn load_chunks(buf: &Vec<u8>, offset: usize) -> Vec<Chunk> {
     let mut i = offset;
-    //while i < buf.len() {
+    let mut chunks = vec![];
+    while i < buf.len() {
         let (chunk, read) = load_chunk(buf, i);
-        //i += read;
-    //}
-    vec![]
+        i += read;
+        chunks.push(chunk);
+    }
+    chunks
 }
 
 // Return chunk and number of bytes read aligned to 4.
@@ -95,8 +97,10 @@ fn load_chunk(buf: &Vec<u8>, offset: usize) -> (Chunk, usize) {
 }
 
 fn round4up(u: u32) -> u32 {
+    // 0x3 is 0b11
+    if u & 0x3 == 0 { u }
     // 0xc is 0b1100 so we erase the last two bits.
-    (u + 4) & 0xfffffffc
+    else { (u + 4) & 0xfffffffc }
 }
 
 #[test]
@@ -125,6 +129,7 @@ fn test_load_chunk() {
 fn test_round4up() {
     assert_eq!(4, round4up(1));
     assert_eq!(56, round4up(0x35));
+    assert_eq!(64, round4up(64));
 }
 
 #[test]
