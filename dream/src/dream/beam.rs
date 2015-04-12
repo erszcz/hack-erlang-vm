@@ -10,7 +10,10 @@ use std::ops::Index;
 use std::path::Path;
 use std::ptr;
 
-struct Beam;
+#[derive(Debug)]
+struct Beam {
+    chunks:     Vec<Chunk>
+}
 
 #[derive(Debug)]
 struct BeamHeader {
@@ -34,11 +37,15 @@ struct Chunk {
 
 impl Beam {
 
-    pub fn load(path: &Path) -> Result<(), String> {
+    pub fn from_file(path: &Path) -> Result<Beam, String> {
         let buf = read_file(path);
         let beam_header = load_header(&buf);
         let chunks = load_chunks(&buf, mem::size_of::<BeamHeader>());
-        Ok (())
+        Ok (Beam { chunks: chunks })
+    }
+
+    pub fn chunk(&self, name: &str) -> Option<&Chunk> {
+        self.chunks.iter().find(|&chunk| chunk.id == name)
     }
 
 }
@@ -133,7 +140,12 @@ fn test_round4up() {
 }
 
 #[test]
-fn test_loading_beam() {
+fn test_loading_beam_from_file() {
     let path = Path::new("../erlang/fac.beam");
-    Beam::load(&path);
+    if let Ok (beam) = Beam::from_file(&path) {
+        assert_eq!("Atom", beam.chunk("Atom").expect("can't get chunk id").id);
+        assert_eq!(53, beam.chunk("Atom").expect("can't get chunk len").len);
+    } else {
+        panic!("can't read .beam file")
+    }
 }
