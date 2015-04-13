@@ -36,7 +36,7 @@ impl AtomTable {
 
     fn new() -> AtomTable { AtomTable { i_to_a: vec![], a_to_i: HashMap::new() } }
 
-    fn list(&self) -> Vec<(AtomIndex, Atom)> {
+    pub fn list(&self) -> Vec<(AtomIndex, Atom)> {
         self.i_to_a.iter().map(|i| i.clone()).enumerate().collect()
     }
 

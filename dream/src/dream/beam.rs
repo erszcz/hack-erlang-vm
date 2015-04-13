@@ -53,7 +53,7 @@ impl Beam {
 fn read_file(path: &Path) -> Vec<u8> {
     let mut f = match File::open(&path) {
         Err (e) => panic!(e),
-        Ok (mut f) => f
+        Ok (f) => f
     };
     let mut b = Vec::new();
     f.read_to_end(&mut b);

@@ -6,8 +6,8 @@
 
 use std::collections::HashMap;
 
-mod atoms;
-mod beam;
+pub mod atoms;
+pub mod beam;
 
 struct Emu {
     pub atoms:      atoms::AtomTable,
