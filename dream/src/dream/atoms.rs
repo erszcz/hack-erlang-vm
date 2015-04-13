@@ -26,9 +26,6 @@ impl AtomTable {
         let mut atoms = AtomTable::new();
         while offset < data.len() {
             let len = Int::from_be(data[offset]) as usize;
-            //if len == 0
-            //    // We are looking at the padding.
-            //    { break }
             let (from, to) = (offset + 1, offset + 1 + len);
             let atom = String::from_utf8_lossy(&data[from..to]).into_owned();
             atoms.add(atom);
