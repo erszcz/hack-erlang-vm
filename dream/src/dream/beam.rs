@@ -11,7 +11,7 @@ use std::path::Path;
 use std::ptr;
 
 #[derive(Debug)]
-struct Beam {
+pub struct Beam {
     chunks:     Vec<Chunk>
 }
 
@@ -29,10 +29,10 @@ struct ChunkHeader {
 }
 
 #[derive(Debug)]
-struct Chunk {
-    id:     String,
-    len:    u32,
-    data:   Vec<u8>
+pub struct Chunk {
+    pub id:     String,
+    pub len:    u32,
+    pub data:   Vec<u8>
 }
 
 impl Beam {
