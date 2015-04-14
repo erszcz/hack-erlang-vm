@@ -25,28 +25,38 @@ impl AtomTable {
             let len = u8::from_be(data[offset]) as usize;
             let (from, to) = (offset + 1, offset + 1 + len);
             let atom = String::from_utf8_lossy(&data[from..to]).into_owned();
-            atoms.add(atom);
+            atoms.add(&atom);
             offset += 1 + len;
         }
         atoms
     }
 
-    fn new() -> AtomTable { AtomTable { i_to_a: vec![], a_to_i: HashMap::new() } }
+    pub fn new() -> AtomTable { AtomTable { i_to_a: vec![], a_to_i: HashMap::new() } }
 
     pub fn list(&self) -> Vec<(AtomIndex, Atom)> {
         self.i_to_a.iter().map(|i| i.clone()).enumerate().collect()
     }
 
-    fn add(&mut self, atom: Atom) {
-        if self.a_to_i.contains_key(&atom)
-            { return }
-        let index = self.i_to_a.len() as AtomIndex;
-        self.i_to_a.push(atom.clone());
-        self.a_to_i.insert(atom, index);
+    pub fn add(&mut self, atom: &str) -> AtomIndex {
+        if let Some (index) = self.get_index(atom)
+            { index }
+        else {
+            let index = self.i_to_a.len() as AtomIndex;
+            self.i_to_a.push(atom.to_string());
+            self.a_to_i.insert(atom.to_string(), index);
+            index
+        }
     }
 
-    pub fn get(&self, atom: Atom) -> Option<AtomIndex> {
-        match self.a_to_i.get(&atom) {
+    pub fn get_atom(&self, index: AtomIndex) -> Option<Atom> {
+        if index < self.i_to_a.len()
+            { Some (self.i_to_a[index].clone()) }
+        else
+            { None }
+    }
+
+    pub fn get_index(&self, atom: &str) -> Option<AtomIndex> {
+        match self.a_to_i.get(atom) {
             Some (index) => Some (*index),
             None => None
         }
@@ -77,22 +87,21 @@ fn test_atom_table_from_chunk() {
 #[test]
 fn add_atom() {
     let mut atoms = AtomTable::new();
-    atoms.add("atom0".to_string());
-    // should pass without panicking
+    assert_eq!(0, atoms.add("atom0"));
 }
 
 #[test]
 fn get_atom_index() {
     let mut atoms = AtomTable::new();
-    atoms.add("atom0".to_string());
-    assert_eq!(Some (0), atoms.get("atom0".to_string()));
+    atoms.add("atom0");
+    assert_eq!(Some (0), atoms.get_index("atom0"));
 }
 
 #[test]
 fn list_atoms() {
     let mut atoms = AtomTable::new();
-    atoms.add("atom0".to_string());
-    atoms.add("atom1".to_string());
+    atoms.add("atom0");
+    atoms.add("atom1");
     assert_eq!(vec![(0, "atom0".to_string()),
                     (1, "atom1".to_string())],
                atoms.list());
