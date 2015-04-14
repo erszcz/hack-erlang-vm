@@ -1,6 +1,8 @@
 use beam;
 use std::collections::HashMap;
-use std::num::Int;
+
+// TODO: remove `allow` clause once the bug with unused, though used, Path is solved
+#[allow(unused_imports)]
 use std::path::Path;
 
 pub type AtomIndex = usize;
@@ -17,15 +19,10 @@ impl AtomTable {
 
     pub fn from_chunk(chunk: &beam::Chunk) -> AtomTable {
         let ref data = chunk.data;
-        let no_of_atoms = unsafe {
-            // Range 0..4 since sizeof(u32) == 4.
-            Int::from_be(*(data[0..4].as_slice().as_ptr() as *const u32))
-        };
-        let mut i = 0;
         let mut offset = 4;
         let mut atoms = AtomTable::new();
         while offset < data.len() {
-            let len = Int::from_be(data[offset]) as usize;
+            let len = u8::from_be(data[offset]) as usize;
             let (from, to) = (offset + 1, offset + 1 + len);
             let atom = String::from_utf8_lossy(&data[from..to]).into_owned();
             atoms.add(atom);
@@ -48,7 +45,7 @@ impl AtomTable {
         self.a_to_i.insert(atom, index);
     }
 
-    fn get(&self, atom: Atom) -> Option<AtomIndex> {
+    pub fn get(&self, atom: Atom) -> Option<AtomIndex> {
         match self.a_to_i.get(&atom) {
             Some (index) => Some (*index),
             None => None
