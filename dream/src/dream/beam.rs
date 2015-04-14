@@ -127,8 +127,8 @@ fn test_load_chunk() {
     assert_eq!(read, 64);
     assert_eq!(chunk.id, "Atom".to_string());
     assert_eq!(chunk.len, 53);
-    assert_eq!(*buf.index(&(12 + read + 0)), 'C' as u8);
-    assert_eq!(*buf.index(&(12 + read + 1)), 'o' as u8);
+    assert_eq!(buf[12 + read + 0], 'C' as u8);
+    assert_eq!(buf[12 + read + 1], 'o' as u8);
 }
 
 #[test]
