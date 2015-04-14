@@ -1,74 +1,91 @@
 #![feature(collections)]
 
-use std::collections::HashMap;
-
 pub mod atoms;
 pub mod beam;
+pub mod exports;
+
+use atoms::AtomTable;
+use beam::{ Beam, Chunk };
+use exports::ExportTable;
+use std::path::Path;
 
 pub struct Emu {
-    pub atoms:      atoms::AtomTable,
+    pub atoms:      AtomTable,
     pub exports:    ExportTable,
     //pub code:       CodeTable
 }
 
-pub type Module = atoms::AtomIndex;
-pub type Function = atoms::AtomIndex;
-pub type Arity = usize;
-pub type MFA = (Module, Function, Arity);
-pub type CodeIndex = usize;
+impl Emu {
 
-pub struct ExportTable {
-    mfa_to_ci: HashMap<MFA, CodeIndex>
+    pub fn new() -> Emu {
+        Emu { atoms: AtomTable::new(),
+              exports: ExportTable::new() }
+    }
+
+    pub fn load_module(&mut self, path: &Path) -> Result<(), String> {
+        let modname = try!( modname_from_path(path) );
+        let beam = try!( Beam::from_file(path) );
+        let atom_chunk = try!( get_chunk(&beam, "Atom") );
+        let expt_chunk = try!( get_chunk(&beam, "ExpT") );
+        let mod_atoms = AtomTable::from_chunk(atom_chunk);
+        load_atoms(self, &mod_atoms);
+        load_exports(self, &modname, &mod_atoms, expt_chunk);
+        Ok (())
+    }
+
 }
 
-impl ExportTable {
+fn get_chunk<'beam>(beam: &'beam Beam, chunk: &str) -> Result<&'beam Chunk, String> {
+    beam.chunk(chunk).ok_or(format!("chunk {:?} not found", chunk))
+}
 
-    pub fn new() -> ExportTable {
-        ExportTable { mfa_to_ci: HashMap::new() }
+fn load_atoms(emu: &mut Emu, mod_atoms: &AtomTable) {
+    for &(_, ref atom) in mod_atoms.list().iter() {
+        emu.atoms.add(atom);
     }
+}
 
-    pub fn put(&mut self, mfa: MFA, code_index: CodeIndex) {
-        self.mfa_to_ci.insert(mfa, code_index);
+fn load_exports(emu: &mut Emu, modname: &String, mod_atoms: &AtomTable, expt_chunk: &Chunk) {
+    let ref mut atoms = emu.atoms;
+    let ref mut exports = emu.exports;
+    let modname_emu_index = lookup_or_add(atoms, modname);
+    let mod_exports = exports::from_chunk(expt_chunk);
+    for mod_export in mod_exports {
+        let fun = mod_atoms.get_atom(mod_export.function as atoms::AtomIndex)
+            .expect("atom not found");
+        let fun_emu_index = lookup_or_add(atoms, &fun);
+        let mfa = (modname_emu_index as atoms::AtomIndex,
+                   fun_emu_index as atoms::AtomIndex,
+                   mod_export.arity as exports::Arity);
+        exports.put(mfa, mod_export.label as usize);
     }
+    ////while offset < data.len() {
+    ////    let export = Export = unsafe { mem::uninitialized() };
+    ////}
+    //// for each exported function:
+    //// - get name atom index
+    //// - lookup in beam-atoms to find the atom itself
+    //// - store/get-index from emulator's atom table
+    //// - put into export table
+}
 
-    pub fn get(&self, mfa: MFA) -> Option<CodeIndex> {
-        match self.mfa_to_ci.get(&mfa) {
-            Some (index) => Some (*index),
-            None => None
+fn modname_from_path(path: &Path) -> Result<String, String> {
+    path.file_stem()
+        .and_then(|modname| Some( modname.to_string_lossy().into_owned() ))
+        .ok_or(format!("can't build module name from {:?}", path))
+}
+
+fn lookup_or_add(atoms: &mut AtomTable, atom: &String) -> atoms::AtomIndex {
+    atoms.add(atom)
+}
+
+#[test]
+fn test_modname_from_path() {
+    let path = Path::new("path/to/enlightenment.beam");
+    match modname_from_path(path) {
+        Err (e) => panic!(e),
+        Ok (modname) => {
+            assert_eq!("enlightenment".to_string(), modname)
         }
     }
-
-    pub fn list(&self) -> Vec<(MFA, CodeIndex)> {
-        self.mfa_to_ci.iter().map(|(k,v)| (*k, *v)).collect()
-    }
-
-}
-
-#[test]
-fn put_exported_function() {
-    let mut et = ExportTable::new();
-    et.put((0, 0, 0), 0);
-    // should pass without panicking
-}
-
-#[test]
-fn get_exported_function() {
-    let mut et = ExportTable::new();
-    let mfa = (0, 0, 0);
-    et.put(mfa, 0);
-    assert_eq!(Some (0), et.get(mfa));
-}
-
-#[test]
-fn list_exports() {
-    let mut et = ExportTable::new();
-    let mfa1 = (0,0,0);
-    let mfa2 = (0,1,2);
-    et.put(mfa1, 0);
-    et.put(mfa2, 1);
-    let mut example = vec![(mfa1, 0), (mfa2, 1)];
-    example.sort();
-    let mut actual = et.list();
-    actual.sort();
-    assert_eq!(example, actual);
 }
