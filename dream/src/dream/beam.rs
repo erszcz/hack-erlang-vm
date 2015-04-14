@@ -6,7 +6,6 @@ use std::io::Error as IOError;
 use std::io::Read;
 use std::num::Int;
 use std::mem;
-use std::ops::Index;
 use std::path::Path;
 use std::ptr;
 
@@ -63,8 +62,8 @@ fn read_file(path: &Path) -> Vec<u8> {
 fn load_header(buf: &Vec<u8>) -> BeamHeader {
     let mut beam_header: BeamHeader = unsafe { mem::uninitialized() };
     unsafe {
-        ptr::copy(&mut beam_header as *mut BeamHeader as *mut u8,
-                  buf.index(&0), mem::size_of::<BeamHeader>());
+        ptr::copy(&buf[0], &mut beam_header as *mut BeamHeader as *mut u8,
+                  mem::size_of::<BeamHeader>());
         beam_header.len = Int::from_be(beam_header.len);
     }
     beam_header
@@ -87,8 +86,8 @@ fn load_chunk(buf: &Vec<u8>, offset: usize) -> (Chunk, usize) {
     let header_size = mem::size_of::<ChunkHeader>();
     let data_offset = offset + header_size;
     unsafe {
-        ptr::copy(&mut chunk_header as *mut ChunkHeader as *mut u8,
-                  buf.index(&offset), header_size);
+        ptr::copy(&buf[offset], &mut chunk_header as *mut ChunkHeader as *mut u8,
+                  header_size);
     }
     let data_len = Int::from_be(chunk_header.len);
     chunk_header.len = data_len;
