@@ -1,3 +1,5 @@
+#![cfg(not(test))]
+
 extern crate dream;
 
 use dream::beam::Beam;

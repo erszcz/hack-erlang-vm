@@ -1,48 +1,44 @@
 #![feature(collections)]
-#![feature(core)]
-#![feature(fs)]
-#![feature(io)]
-#![feature(path)]
 
 use std::collections::HashMap;
 
 pub mod atoms;
 pub mod beam;
 
-struct Emu {
+pub struct Emu {
     pub atoms:      atoms::AtomTable,
     pub exports:    ExportTable,
     //pub code:       CodeTable
 }
 
-type Module = atoms::AtomIndex;
-type Function = atoms::AtomIndex;
-type Arity = usize;
-type MFA = (Module, Function, Arity);
-type CodeIndex = usize;
+pub type Module = atoms::AtomIndex;
+pub type Function = atoms::AtomIndex;
+pub type Arity = usize;
+pub type MFA = (Module, Function, Arity);
+pub type CodeIndex = usize;
 
-struct ExportTable {
+pub struct ExportTable {
     mfa_to_ci: HashMap<MFA, CodeIndex>
 }
 
 impl ExportTable {
 
-    fn new() -> ExportTable {
+    pub fn new() -> ExportTable {
         ExportTable { mfa_to_ci: HashMap::new() }
     }
 
-    fn put(&mut self, mfa: MFA, code_index: CodeIndex) {
+    pub fn put(&mut self, mfa: MFA, code_index: CodeIndex) {
         self.mfa_to_ci.insert(mfa, code_index);
     }
 
-    fn get(&self, mfa: MFA) -> Option<CodeIndex> {
+    pub fn get(&self, mfa: MFA) -> Option<CodeIndex> {
         match self.mfa_to_ci.get(&mfa) {
             Some (index) => Some (*index),
             None => None
         }
     }
 
-    fn list(&self) -> Vec<(MFA, CodeIndex)> {
+    pub fn list(&self) -> Vec<(MFA, CodeIndex)> {
         self.mfa_to_ci.iter().map(|(k,v)| (*k, *v)).collect()
     }
 
