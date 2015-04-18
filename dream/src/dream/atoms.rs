@@ -31,10 +31,15 @@ impl AtomTable {
         atoms
     }
 
-    pub fn new() -> AtomTable { AtomTable { i_to_a: vec![], a_to_i: HashMap::new() } }
+    pub fn new() -> AtomTable {
+        let mut i_to_a = vec![];
+        i_to_a.push("".to_string());
+        AtomTable { i_to_a: i_to_a,
+                    a_to_i: HashMap::new() }
+    }
 
     pub fn list(&self) -> Vec<(AtomIndex, Atom)> {
-        self.i_to_a.iter().map(|i| i.clone()).enumerate().collect()
+        self.i_to_a.iter().map(|i| i.clone()).enumerate().skip(1).collect()
     }
 
     pub fn add(&mut self, atom: &str) -> AtomIndex {
@@ -67,13 +72,13 @@ impl AtomTable {
 #[test]
 fn test_atom_table_from_chunk() {
     let expected_atoms: Vec<(usize, String)> =
-        [(0, "fac"),
-         (1, "state"),
-         (2, "erlang"),
-         (3, "-"),
-         (4, "*"),
-         (5, "module_info"),
-         (6, "get_module_info")]
+        [(1, "fac"),
+         (2, "state"),
+         (3, "erlang"),
+         (4, "-"),
+         (5, "*"),
+         (6, "module_info"),
+         (7, "get_module_info")]
              .iter().map(|&(i,s)| (i,s.to_string())).collect();
     let path = Path::new("../erlang/fac.beam");
     if let Ok (beam) = beam::Beam::from_file(&path) {
@@ -87,22 +92,22 @@ fn test_atom_table_from_chunk() {
 #[test]
 fn add_atom() {
     let mut atoms = AtomTable::new();
-    assert_eq!(0, atoms.add("atom0"));
+    assert_eq!(1, atoms.add("atom1"));
 }
 
 #[test]
 fn get_atom_index() {
     let mut atoms = AtomTable::new();
-    atoms.add("atom0");
-    assert_eq!(Some (0), atoms.get_index("atom0"));
+    atoms.add("atom1");
+    assert_eq!(Some (1), atoms.get_index("atom1"));
 }
 
 #[test]
 fn list_atoms() {
     let mut atoms = AtomTable::new();
-    atoms.add("atom0");
     atoms.add("atom1");
-    assert_eq!(vec![(0, "atom0".to_string()),
-                    (1, "atom1".to_string())],
+    atoms.add("atom2");
+    assert_eq!(vec![(1, "atom1".to_string()),
+                    (2, "atom2".to_string())],
                atoms.list());
 }
