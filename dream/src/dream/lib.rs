@@ -2,6 +2,7 @@
 
 pub mod atoms;
 pub mod beam;
+pub mod code;
 pub mod exports;
 
 use atoms::AtomTable;
