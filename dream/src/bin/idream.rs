@@ -36,7 +36,9 @@ fn list_exports(args: &[String]) {
     if let Ok (()) = emu.load_module(path) {
         print_atoms(&emu.atoms);
         for &((m,f,a), ref label) in emu.exports.list().iter() {
-            println!("({},{},{}) {}", m, f, a, label);
+            let module = emu.atoms.get_atom(m).expect("module name not in atom table");
+            let function = emu.atoms.get_atom(f).expect("function name not in atom table");
+            println!("{}:{}/{} ({},{},{}) at {}", module, function, a, m, f, a, label);
         }
     } else {
         panic!("can't load module")
