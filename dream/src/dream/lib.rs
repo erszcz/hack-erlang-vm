@@ -59,14 +59,6 @@ fn load_exports(emu: &mut Emu, modname: &String, mod_atoms: &AtomTable, expt_chu
                    mod_export.arity as exports::Arity);
         exports.put(mfa, mod_export.label as usize);
     }
-    ////while offset < data.len() {
-    ////    let export = Export = unsafe { mem::uninitialized() };
-    ////}
-    //// for each exported function:
-    //// - get name atom index
-    //// - lookup in beam-atoms to find the atom itself
-    //// - store/get-index from emulator's atom table
-    //// - put into export table
 }
 
 fn modname_from_path(path: &Path) -> Result<String, String> {
