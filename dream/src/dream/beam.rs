@@ -94,10 +94,7 @@ fn load_chunk(buf: &Vec<u8>, offset: usize) -> (Chunk, usize) {
     }
     let data_len = u32::from_be(chunk_header.len);
     chunk_header.len = data_len;
-    let data = unsafe {
-        Vec::from_raw_buf(buf.as_ptr().offset(data_offset as isize),
-                          data_len as usize)
-    };
+    let data = (&buf[data_offset .. data_offset + data_len as usize]).to_vec();
     let chunk_id = String::from_utf8_lossy(&chunk_header.id).into_owned();
     ( Chunk { id: chunk_id,
               len: chunk_header.len,

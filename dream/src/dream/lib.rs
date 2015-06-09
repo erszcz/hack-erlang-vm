@@ -1,5 +1,3 @@
-#![feature(collections)]
-
 pub mod atoms;
 pub mod beam;
 pub mod code;
