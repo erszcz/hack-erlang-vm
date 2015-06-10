@@ -67,8 +67,8 @@ fn usage() {
 
 fn dispatch_module(subcommand: &str, args: &[String]) {
     match subcommand {
-        "atoms" => list_atoms(args),
-        "exports" => list_exports(args),
+        "atoms" => list_module_atoms(args),
+        "exports" => list_module_exports(args),
         _ => panic!(format!("unrecognized module subcommand: {:?}", subcommand))
     }
 }
@@ -76,7 +76,7 @@ fn dispatch_module(subcommand: &str, args: &[String]) {
 fn dispatch_rts(subcommand: &str, args: &[String]) {
 }
 
-fn list_atoms(args: &[String]) {
+fn list_module_atoms(args: &[String]) {
     let arg0 = args[0].to_string();
     let path = Path::new(&arg0);
     let beam = Beam::from_file(path).unwrap();
@@ -90,17 +90,21 @@ fn print_atoms(atoms: &dream::atoms::AtomTable) {
     }
 }
 
-fn list_exports(args: &[String]) {
+fn list_module_exports(args: &[String]) {
     let arg0 = args[0].to_string();
     let path = Path::new(&arg0);
-    let mut emu = dream::Emu::new();
-    if let Ok (()) = emu.load_module(path) {
-        for &((m,f,a), ref label) in emu.exports.list().iter() {
-            let module = emu.atoms.get_atom(m).expect("module name not in atom table");
-            let function = emu.atoms.get_atom(f).expect("function name not in atom table");
-            println!("{}:{}/{} ({},{},{}) at {}", module, function, a, m, f, a, label);
-        }
-    } else {
-        panic!("can't load module")
+    let module = path.file_stem().and_then(|module| module.to_str()).unwrap();
+    let beam = Beam::from_file(path).unwrap();
+    let atoms = dream::atoms::AtomTable::from_chunk(beam.chunk("Atom")
+                                                        .expect("no Atom chunk"));
+    let expt_chunk = beam.chunk("ExpT").expect("no ExpT chunk");
+    for export in dream::exports::from_chunk(expt_chunk) {
+        let function = atoms.get_atom(export.function as usize)
+                            .expect("function name not found in atom table");
+        let module_name_index = atoms.get_index(module)
+                                     .expect("module name not found in atom table");
+        println!("{}:{}/{} ({},{},{}) at {}",
+                 module, function, export.arity,
+                 module_name_index, export.function, export.arity, export.label);
     }
 }
