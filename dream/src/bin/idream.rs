@@ -92,10 +92,14 @@ fn format_atoms(atoms: &dream::atoms::AtomTable) -> String {
     s
 }
 
+fn module_name(path: &Path) -> Option<&str> {
+    path.file_stem().and_then(|module| module.to_str())
+}
+
 fn list_module_exports(args: &[String]) {
     let arg0 = args[0].to_string();
     let path = Path::new(&arg0);
-    let module = path.file_stem().and_then(|module| module.to_str()).unwrap();
+    let module = module_name(&path).unwrap();
     let beam = Beam::from_file(path).unwrap();
     let atoms = dream::atoms::AtomTable::from_chunk(beam.chunk("Atom")
                                                         .expect("no Atom chunk"));
