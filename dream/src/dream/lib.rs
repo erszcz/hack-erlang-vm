@@ -34,7 +34,8 @@ impl Emu {
 
 }
 
-fn get_chunk<'beam>(beam: &'beam Beam, chunk: &str) -> Result<&'beam Chunk, String> {
+fn get_chunk<'beam>(beam: &'beam Beam,
+                    chunk: &str) -> Result<&'beam Chunk, String> {
     beam.chunk(chunk).ok_or(format!("chunk {:?} not found", chunk))
 }
 
@@ -44,7 +45,8 @@ fn load_atoms(emu: &mut Emu, mod_atoms: &AtomTable) {
     }
 }
 
-fn load_exports(emu: &mut Emu, modname: &String, mod_atoms: &AtomTable, expt_chunk: &Chunk) {
+fn load_exports(emu: &mut Emu, modname: &String,
+                mod_atoms: &AtomTable, expt_chunk: &Chunk) {
     let ref mut atoms = emu.atoms;
     let ref mut exports = emu.exports;
     let modname_emu_index = lookup_or_add(atoms, modname);
