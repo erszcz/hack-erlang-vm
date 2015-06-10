@@ -69,6 +69,7 @@ fn dispatch_module(subcommand: &str, args: &[String]) {
     match subcommand {
         "atoms" => list_module_atoms(args),
         "exports" => list_module_exports(args),
+        "code" => show_code(args),
         _ => panic!(format!("unrecognized module subcommand: {:?}", subcommand))
     }
 }
@@ -113,4 +114,25 @@ fn list_module_exports(args: &[String]) {
                  module, function, export.arity,
                  module_name_index, export.function, export.arity, export.label);
     }
+}
+
+fn show_code(args: &[String]) {
+    let arg0 = args[0].to_string();
+    let path = Path::new(&arg0);
+    let beam = Beam::from_file(path).unwrap();
+    let raw_code_chunk = beam.chunk("Code").expect("no Code chunk");
+    let code_chunk = dream::code::CodeChunk::from_chunk(&raw_code_chunk).unwrap();
+    //println!("{}", code_chunk.id);
+    //println!("{}", code_chunk.len);
+    //print!("{}", format_code_data(&raw_code_chunk.data));
+    println!("{:?}", code_chunk);
+}
+
+fn format_code_data(data: &Vec<u8>) -> String {
+    let mut s = String::new();
+    for (i,b) in data.chunks(4).enumerate() {
+        let tmp = format!("{} {:?}\n", i * 4, b);
+        s.push_str(&tmp);
+    }
+    s
 }
