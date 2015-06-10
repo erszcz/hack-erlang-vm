@@ -81,13 +81,15 @@ fn list_module_atoms(args: &[String]) {
     let path = Path::new(&arg0);
     let beam = Beam::from_file(path).unwrap();
     let atoms = dream::atoms::AtomTable::from_chunk(beam.chunk("Atom").expect("no Atom chunk"));
-    print_atoms(&atoms);
+    print!("{}", format_atoms(&atoms));
 }
 
-fn print_atoms(atoms: &dream::atoms::AtomTable) {
+fn format_atoms(atoms: &dream::atoms::AtomTable) -> String {
+    let mut s = String::new();
     for &(ref index, ref atom) in atoms.list().iter() {
-        println!("{} {}", index, atom);
+        s.push_str(&format!("{} {}\n", index, atom));
     }
+    s
 }
 
 fn list_module_exports(args: &[String]) {
