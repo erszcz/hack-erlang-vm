@@ -1,12 +1,6 @@
 use std;
 use super::beam;
 
-type Opcode = u32;
-
-pub struct CodeTable {
-    opcodes: Vec<Opcode>
-}
-
 #[derive(Debug)]
 pub struct CodeChunk {
     pub id:                 String,
@@ -78,47 +72,4 @@ fn u32_from_be(bytes: &[u8]) -> u32 {
     if bytes.len() != 4 { panic!("expected 4 bytes") }
     let mut _u32: [u8; 4] = [bytes[0], bytes[1], bytes[2], bytes[3]];
     u32::from_be(unsafe { *(&_u32 as *const u8 as *const u32) })
-}
-
-const NULL_OPCODE: Opcode = 0;
-
-impl CodeTable {
-
-    pub fn from_chunk(chunk: &beam::Chunk) -> CodeTable {
-        let _max_opcode_offset = 8;
-        let _no_of_labels_offset = 12;
-        let _no_of_exports_offset = 16;
-        let _offset = 20;
-        let mut ct = CodeTable::new();
-        for opcode in chunk.data.chunks(4) {
-            if opcode.len() < 4
-                // Last incomplete chunk.
-                { continue }
-            unsafe {
-                ct.opcodes.push(*(&opcode[0] as *const u8 as *const Opcode));
-            }
-        }
-        ct
-    }
-
-    fn new() -> CodeTable {
-        let opcodes = vec![NULL_OPCODE];
-        CodeTable { opcodes: opcodes }
-    }
-
-    pub fn list(&self) -> Vec<(u8,u8,u8,u8)> {
-        self.opcodes.iter()
-            .map(|&opcode| unsafe {
-                let as_slice = std::slice::from_raw_parts(opcode as *const u32
-                                                          as *const u8, 4);
-                (as_slice[0], as_slice[1], as_slice[2], as_slice[3])
-            })
-            .collect()
-    }
-
-}
-
-#[test]
-fn test_listing_opcodes() {
-    panic!("not implemented yet");
 }
