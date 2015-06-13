@@ -74,7 +74,8 @@ fn dispatch_module(subcommand: &str, args: &[String]) {
     }
 }
 
-fn dispatch_rts(subcommand: &str, args: &[String]) {
+fn dispatch_rts(_subcommand: &str, _args: &[String]) {
+    panic!("not implemented yet");
 }
 
 fn list_module_atoms(args: &[String]) {
