@@ -9,22 +9,22 @@ pub struct CodeTable {
 
 #[derive(Debug)]
 pub struct CodeChunk {
-    id:                 String,
-    len:                u32,
+    pub id:                 String,
+    pub len:                u32,
 
     // `info_fields_len` is at least 16 (4 bytes for each of instruction_set,
     // opcode_max, n_labels, n_functions), though might be more.
     // `code` starts at an offset of `.instruction_set` + `info_fields_len`.
-    info_fields_len:    u32,
+    pub info_fields_len:    u32,
 
-    instruction_set:    u32,
-    opcode_max:         u32,
-    n_labels:           u32,
-    n_functions:        u32,
+    pub instruction_set:    u32,
+    pub opcode_max:         u32,
+    pub n_labels:           u32,
+    pub n_functions:        u32,
 
     // Possibly more data here depending on `info_fields_len` value.
 
-    code:               Vec<u8>
+    pub code:               Vec<u8>
 }
 
 #[derive(Debug)]

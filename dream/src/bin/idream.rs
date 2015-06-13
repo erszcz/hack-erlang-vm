@@ -69,7 +69,7 @@ fn dispatch_module(subcommand: &str, args: &[String]) {
     match subcommand {
         "atoms" => list_module_atoms(args),
         "exports" => list_module_exports(args),
-        "code" => show_code(args),
+        "code" => print_code(args),
         _ => panic!(format!("unrecognized module subcommand: {:?}", subcommand))
     }
 }
@@ -116,23 +116,25 @@ fn list_module_exports(args: &[String]) {
     }
 }
 
-fn show_code(args: &[String]) {
+fn print_code(args: &[String]) {
     let arg0 = args[0].to_string();
     let path = Path::new(&arg0);
     let beam = Beam::from_file(path).unwrap();
     let raw_code_chunk = beam.chunk("Code").expect("no Code chunk");
     let code_chunk = dream::code::CodeChunk::from_chunk(&raw_code_chunk).unwrap();
-    //println!("{}", code_chunk.id);
-    //println!("{}", code_chunk.len);
-    //print!("{}", format_code_data(&raw_code_chunk.data));
-    println!("{:?}", code_chunk);
+    println!("{}", format_code(&code_chunk));
 }
 
-fn format_code_data(data: &Vec<u8>) -> String {
+fn format_code(code_chunk: &dream::code::CodeChunk) -> String {
     let mut s = String::new();
-    for (i,b) in data.chunks(4).enumerate() {
-        let tmp = format!("{} {:?}\n", i * 4, b);
-        s.push_str(&tmp);
-    }
+    s.push_str(&format!("id              : {}\n", code_chunk.id));
+    s.push_str(&format!("len             : {}\n", code_chunk.len));
+    s.push_str(&format!("info_fields_len : {}\n", code_chunk.info_fields_len));
+    s.push_str(&format!("instruction_set : {}\n", code_chunk.instruction_set));
+    s.push_str(&format!("opcode_max      : {}\n", code_chunk.opcode_max));
+    s.push_str(&format!("n_labels        : {}\n", code_chunk.n_labels));
+    s.push_str(&format!("n_functions     : {}\n", code_chunk.n_functions));
+    s.push_str(&format!("code            :\n"));
+    s.push_str(&format!("{:?}", code_chunk.code));
     s
 }
