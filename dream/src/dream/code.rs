@@ -110,6 +110,213 @@ impl<'c> Iterator for CodeOpIterator<'c> {
 
 }
 
+// TODO: this is just a subset of BEAM opcodes!
+#[derive(Debug)]
+enum OpType {
+    CallExtOnly     (u8, u8),
+    CallOnly        (u8, u8),
+    FuncInfo        (u8, u8, u8),
+    GcBif2          (u8, u8, u8, u8, u8, u8),
+    GetTupleElement (u8, u8, u8),
+    IntCodeEnd,
+    IsEqExact       (u8, u8, u8),
+    IsTuple         (u8, u8),
+    Label           (u8),
+    Line            (u8),
+    Move            (u8, u8),
+    Put             (u8),
+    PutTuple        (u8, u8),
+    Return,
+    TestArity       (u8, u8, u8),
+    TestHeap        (u8, u8)
+
+      invalid_opcode",0)),
+      label",1)),
+      func_info",3)),
+      int_code_end",0)),
+      call",2)),
+      call_last",3)),
+      call_only",2)),
+      call_ext",2)),
+      call_ext_last",3)),
+      bif0",2)),
+      bif1",4)),
+      bif2",5)),
+      allocate",2)),
+      allocate_heap",3)),
+      allocate_zero",2)),
+      allocate_heap_zero",3)),
+      test_heap",2)),
+      init",1)),
+      deallocate",1)),
+      return",0)),
+      send",0)),
+      remove_message",0)),
+      timeout",0)),
+      loop_rec",2)),
+      loop_rec_end",1)),
+      wait",1)),
+      wait_timeout",2)),
+      m_plus",4)),
+      m_minus",4)),
+      m_times",4)),
+      m_div",4)),
+      int_div",4)),
+      int_rem",4)),
+      int_band",4)),
+      int_bor",4)),
+      int_bxor",4)),
+      int_bsl",4)),
+      int_bsr",4)),
+      int_bnot",3)),
+      is_lt",3)),
+      is_ge",3)),
+      is_eq",3)),
+      is_ne",3)),
+      is_eq_exact",3)),
+      is_ne_exact",3)),
+      is_integer",2)),
+      is_float",2)),
+      is_number",2)),
+      is_atom",2)),
+      is_pid",2)),
+      is_reference",2)),
+      is_port",2)),
+      is_nil",2)),
+      is_binary",2)),
+      is_constant",2)),
+      is_list",2)),
+      is_nonempty_list",2)),
+      is_tuple",2)),
+      test_arity",3)),
+      select_val",3)),
+      select_tuple_arity",3)),
+      jump",1)),
+      catch",2)),
+      catch_end",1)),
+      move",2)),
+      get_list",3)),
+      get_tuple_element",3)),
+      set_tuple_element",3)),
+      put_string",3)),
+      put_list",3)),
+      put_tuple",2)),
+      put",1)),
+      badmatch",1)),
+      if_end",0)),
+      case_end",1)),
+      call_fun",1)),
+      make_fun",3)),
+      is_function",2)),
+      call_ext_only",2)),
+      bs_start_match",2)),
+      bs_get_integer",5)),
+      bs_get_float",5)),
+      bs_get_binary",5)),
+      bs_skip_bits",4)),
+      bs_test_tail",2)),
+      bs_save",1)),
+      bs_restore",1)),
+      bs_init",2)),
+      bs_final",2)),
+      bs_put_integer",5)),
+      bs_put_binary",5)),
+      bs_put_float",5)),
+      bs_put_string",2)),
+      bs_need_buf",1)),
+      fclearerror",0)),
+      fcheckerror",1)),
+      fmove",2)),
+      fconv",2)),
+      fadd",4)),
+      fsub",4)),
+      fmul",4)),
+      fdiv",4)),
+      fnegate",3)),
+      make_fun2",1)),
+      try",2)),
+      try_end",1)),
+      try_case",1)),
+      try_case_end",1)),
+      raise",2)),
+      bs_init2",6)),
+      bs_bits_to_bytes",3)),
+      bs_add",5)),
+      apply",1)),
+      apply_last",2)),
+      is_boolean",2)),
+      is_function2",3)),
+      bs_start_match2",5)),
+      bs_get_integer2",7)),
+      bs_get_float2",7)),
+      bs_get_binary2",7)),
+      bs_skip_bits2",5)),
+      bs_test_tail2",3)),
+      bs_save2",2)),
+      bs_restore2",2)),
+      gc_bif1",5)),
+      gc_bif2",6)),
+      bs_final2",2)),
+      bs_bits_to_bytes2",2)),
+      put_literal",2)),
+      is_bitstr",2)),
+      bs_context_to_binary",1)),
+      bs_test_unit",3)),
+      bs_match_string",4)),
+      bs_init_writable",0)),
+      bs_append",8)),
+      bs_private_append",6)),
+      trim",2)),
+      bs_init_bits",6)),
+      bs_get_utf8",5)),
+      bs_skip_utf8",4)),
+      bs_get_utf16",5)),
+      bs_skip_utf16",4)),
+      bs_get_utf32",5)),
+      bs_skip_utf32",4)),
+      bs_utf8_size",3)),
+      bs_put_utf8",3)),
+      bs_utf16_size",3)),
+      bs_put_utf16",3)),
+      bs_put_utf32",3)),
+      on_load",0)),
+      recv_mark",1)),
+      recv_set",1)),
+      gc_bif3",7)),
+      line",1)),
+      put_map_assoc",5)),
+      put_map_exact",5)),
+      is_map",2)),
+      has_map_fields",3)),
+      get_map_elements",3))];
+
+}
+
+impl OpType {
+
+    fn code(self) -> usize {
+        match self {
+            CallExtOnly (_, _)        => 78,
+            CallOnly (_, _)           => 6,
+            FuncInfo (_, _, _)        => 2,
+            GcBif2 (_, _, _, _, _, _) => 125,
+            GetTupleElement (_, _, _) => 66,
+            IntCodeEnd                => 3,
+            IsEqExact (_, _, _)       => 43,
+            IsTuple (_, _)            => 57,
+            Label (_)                 => 1,
+            Line (_)                  => 153,
+            Move (_, _)               => 64,
+            Put (_)                   => 71,
+            PutTuple (_, _)           => 70,
+            Return                    => 19,
+            TestArity (_, _, _)       => 58,
+            TestHeap (_, _)           => 16
+        }
+    }
+
+}
+
 pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
     &[(0,("(placeholder)",0)),
       (1,("label",1)),
@@ -270,3 +477,24 @@ pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
       (156,("is_map",2)),
       (157,("has_map_fields",3)),
       (158,("get_map_elements",3))];
+
+#[[test]
+fn op_type_index_test() {
+    assert_eq!(
+    CallExtOnly (0, 0)
+        CallOnly (0, 0)
+        FuncInfo (0, 0, 0)
+        GcBif2 (0, 0, 0, 0, 0, 0)
+        GetTupleElement (0, 0, 0)
+        IntCodeEnd
+        IsEqExact (0, 0, 0)
+        IsTuple (0, 0)
+        Label (0)
+        Line (0)
+        Move (0, 0)
+        Put (0)
+        PutTuple (0, 0)
+        Return
+        TestArity (0, 0, 0)
+        TestHeap (0, 0)
+}
