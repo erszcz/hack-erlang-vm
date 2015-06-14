@@ -23,12 +23,22 @@ pub struct CodeChunk {
 
 #[derive(Debug)]
 pub enum Error {
+    // Not a code chunk.
     UnexpectedChunk(String, String),
-    InvalidChunk
+
+    // Missing data / malformed chunk.
+    InvalidChunk,
+
+    // A module uses higher opcodes than this runtime undertands.
+    UnsupportedOpcode(u32)
 }
 
 fn unexpected_chunk(expected: &str, got: &str) -> Result<CodeChunk, Error> {
     Err ( Error::UnexpectedChunk(expected.to_string(), got.to_string()) )
+}
+
+fn unsupported_opcode(opcode: u32) -> Result<CodeChunk, Error> {
+    Err ( Error::UnsupportedOpcode(opcode) )
 }
 
 impl CodeChunk {
@@ -39,15 +49,24 @@ impl CodeChunk {
         // Fields from `info_fields_len` to `n_functions` must be present!
         if chunk.data.len() < 5 * std::mem::size_of::<u32>()
             { return Err ( Error::InvalidChunk ) }
+        let info_fields_len = u32_from_be(&chunk.data[0..4]);
+        let code_start = (/* end of info_fields_len */ 4 +
+                          /* offset */ info_fields_len) as usize;
+        if code_start >= chunk.data.len()
+            { return Err ( Error::InvalidChunk ) }
+        let opcode_max = u32_from_be(&chunk.data[8..12]);
+        if opcode_max > BEAMOpcode::max_opcode() as u32
+            { return unsupported_opcode(opcode_max) }
+        let ops = try!(load_bytecode(&chunk.data[code_start..]));
         Ok (CodeChunk {
                 id: chunk.id.clone(),
                 len: chunk.len,
-                info_fields_len: u32_from_be(&chunk.data[0..4]),
+                info_fields_len: info_fields_len,
                 instruction_set: u32_from_be(&chunk.data[4..8]),
-                opcode_max: u32_from_be(&chunk.data[8..12]),
+                opcode_max: opcode_max,
                 n_labels: u32_from_be(&chunk.data[12..16]),
                 n_functions: u32_from_be(&chunk.data[16..20]),
-                code: chunk.data[20..].to_vec()
+                code: ops
         })
     }
 
@@ -55,6 +74,16 @@ impl CodeChunk {
         CodeOpIterator { i: 0, code: &self.code }
     }
 
+}
+
+// TODO:
+// - load_bytecode
+// - BEAMOpcode name and test for checking that names and codes aren't messed up;
+//   use a macro in test to avoid opcode name repetition and learn how
+//   to stringify identifiers in macros
+
+fn load_bytecode(bytecode: &[u8]) -> Result<Vec<u8>, Error> {
+    Ok (bytecode.to_vec())
 }
 
 // This is funny.
@@ -80,7 +109,7 @@ fn u32_from_be(bytes: &[u8]) -> u32 {
 
 #[derive(Debug)]
 pub struct Op {
-    pub name: &'static str,
+    pub code: BEAMOpcode,
     pub args: Vec<u8>
 }
 
@@ -111,214 +140,180 @@ impl<'c> Iterator for CodeOpIterator<'c> {
 }
 
 // TODO: this is just a subset of BEAM opcodes!
+//#[derive(Debug)]
+//enum OpType {
+//    CallExtOnly     (u8, u8),
+//    CallOnly        (u8, u8),
+//    FuncInfo        (u8, u8, u8),
+//    GcBif2          (u8, u8, u8, u8, u8, u8),
+//    GetTupleElement (u8, u8, u8),
+//    IntCodeEnd,
+//    IsEqExact       (u8, u8, u8),
+//    IsTuple         (u8, u8),
+//    Label           (u8),
+//    Line            (u8),
+//    Move            (u8, u8),
+//    Put             (u8),
+//    PutTuple        (u8, u8),
+//    Return,
+//    TestArity       (u8, u8, u8),
+//    TestHeap        (u8, u8)
+//}
+
+//impl OpType {
+
+//    fn code(self) -> usize {
+//        match self {
+//            CallExtOnly (_, _)        => 78,
+//            CallOnly (_, _)           => 6,
+//            FuncInfo (_, _, _)        => 2,
+//            GcBif2 (_, _, _, _, _, _) => 125,
+//            GetTupleElement (_, _, _) => 66,
+//            IntCodeEnd                => 3,
+//            IsEqExact (_, _, _)       => 43,
+//            IsTuple (_, _)            => 57,
+//            Label (_)                 => 1,
+//            Line (_)                  => 153,
+//            Move (_, _)               => 64,
+//            Put (_)                   => 71,
+//            PutTuple (_, _)           => 70,
+//            Return                    => 19,
+//            TestArity (_, _, _)       => 58,
+//            TestHeap (_, _)           => 16
+//        }
+//    }
+
+//}
+
+#[allow(non_camel_case_types)]
 #[derive(Debug)]
-enum OpType {
-    CallExtOnly     (u8, u8),
-    CallOnly        (u8, u8),
-    FuncInfo        (u8, u8, u8),
-    GcBif2          (u8, u8, u8, u8, u8, u8),
-    GetTupleElement (u8, u8, u8),
-    IntCodeEnd,
-    IsEqExact       (u8, u8, u8),
-    IsTuple         (u8, u8),
-    Label           (u8),
-    Line            (u8),
-    Move            (u8, u8),
-    Put             (u8),
-    PutTuple        (u8, u8),
-    Return,
-    TestArity       (u8, u8, u8),
-    TestHeap        (u8, u8)
-
-      invalid_opcode",0)),
-      label",1)),
-      func_info",3)),
-      int_code_end",0)),
-      call",2)),
-      call_last",3)),
-      call_only",2)),
-      call_ext",2)),
-      call_ext_last",3)),
-      bif0",2)),
-      bif1",4)),
-      bif2",5)),
-      allocate",2)),
-      allocate_heap",3)),
-      allocate_zero",2)),
-      allocate_heap_zero",3)),
-      test_heap",2)),
-      init",1)),
-      deallocate",1)),
-      return",0)),
-      send",0)),
-      remove_message",0)),
-      timeout",0)),
-      loop_rec",2)),
-      loop_rec_end",1)),
-      wait",1)),
-      wait_timeout",2)),
-      m_plus",4)),
-      m_minus",4)),
-      m_times",4)),
-      m_div",4)),
-      int_div",4)),
-      int_rem",4)),
-      int_band",4)),
-      int_bor",4)),
-      int_bxor",4)),
-      int_bsl",4)),
-      int_bsr",4)),
-      int_bnot",3)),
-      is_lt",3)),
-      is_ge",3)),
-      is_eq",3)),
-      is_ne",3)),
-      is_eq_exact",3)),
-      is_ne_exact",3)),
-      is_integer",2)),
-      is_float",2)),
-      is_number",2)),
-      is_atom",2)),
-      is_pid",2)),
-      is_reference",2)),
-      is_port",2)),
-      is_nil",2)),
-      is_binary",2)),
-      is_constant",2)),
-      is_list",2)),
-      is_nonempty_list",2)),
-      is_tuple",2)),
-      test_arity",3)),
-      select_val",3)),
-      select_tuple_arity",3)),
-      jump",1)),
-      catch",2)),
-      catch_end",1)),
-      move",2)),
-      get_list",3)),
-      get_tuple_element",3)),
-      set_tuple_element",3)),
-      put_string",3)),
-      put_list",3)),
-      put_tuple",2)),
-      put",1)),
-      badmatch",1)),
-      if_end",0)),
-      case_end",1)),
-      call_fun",1)),
-      make_fun",3)),
-      is_function",2)),
-      call_ext_only",2)),
-      bs_start_match",2)),
-      bs_get_integer",5)),
-      bs_get_float",5)),
-      bs_get_binary",5)),
-      bs_skip_bits",4)),
-      bs_test_tail",2)),
-      bs_save",1)),
-      bs_restore",1)),
-      bs_init",2)),
-      bs_final",2)),
-      bs_put_integer",5)),
-      bs_put_binary",5)),
-      bs_put_float",5)),
-      bs_put_string",2)),
-      bs_need_buf",1)),
-      fclearerror",0)),
-      fcheckerror",1)),
-      fmove",2)),
-      fconv",2)),
-      fadd",4)),
-      fsub",4)),
-      fmul",4)),
-      fdiv",4)),
-      fnegate",3)),
-      make_fun2",1)),
-      try",2)),
-      try_end",1)),
-      try_case",1)),
-      try_case_end",1)),
-      raise",2)),
-      bs_init2",6)),
-      bs_bits_to_bytes",3)),
-      bs_add",5)),
-      apply",1)),
-      apply_last",2)),
-      is_boolean",2)),
-      is_function2",3)),
-      bs_start_match2",5)),
-      bs_get_integer2",7)),
-      bs_get_float2",7)),
-      bs_get_binary2",7)),
-      bs_skip_bits2",5)),
-      bs_test_tail2",3)),
-      bs_save2",2)),
-      bs_restore2",2)),
-      gc_bif1",5)),
-      gc_bif2",6)),
-      bs_final2",2)),
-      bs_bits_to_bytes2",2)),
-      put_literal",2)),
-      is_bitstr",2)),
-      bs_context_to_binary",1)),
-      bs_test_unit",3)),
-      bs_match_string",4)),
-      bs_init_writable",0)),
-      bs_append",8)),
-      bs_private_append",6)),
-      trim",2)),
-      bs_init_bits",6)),
-      bs_get_utf8",5)),
-      bs_skip_utf8",4)),
-      bs_get_utf16",5)),
-      bs_skip_utf16",4)),
-      bs_get_utf32",5)),
-      bs_skip_utf32",4)),
-      bs_utf8_size",3)),
-      bs_put_utf8",3)),
-      bs_utf16_size",3)),
-      bs_put_utf16",3)),
-      bs_put_utf32",3)),
-      on_load",0)),
-      recv_mark",1)),
-      recv_set",1)),
-      gc_bif3",7)),
-      line",1)),
-      put_map_assoc",5)),
-      put_map_exact",5)),
-      is_map",2)),
-      has_map_fields",3)),
-      get_map_elements",3))];
-
+enum BEAMOpcode {
+    label               = 1,
+    func_info           = 2,
+    int_code_end        = 3,
+    call_only           = 6,
+    test_heap           = 16,
+    return_             = 19,
+    is_eq_exact         = 43,
+    is_tuple            = 57,
+    test_arity          = 58,
+    move_               = 64,
+    get_tuple_element   = 66,
+    put_tuple           = 70,
+    put                 = 71,
+    call_ext_only       = 78,
+    gc_bif2             = 125,
+    line                = 153
 }
 
-impl OpType {
+impl BEAMOpcode {
 
-    fn code(self) -> usize {
-        match self {
-            CallExtOnly (_, _)        => 78,
-            CallOnly (_, _)           => 6,
-            FuncInfo (_, _, _)        => 2,
-            GcBif2 (_, _, _, _, _, _) => 125,
-            GetTupleElement (_, _, _) => 66,
-            IntCodeEnd                => 3,
-            IsEqExact (_, _, _)       => 43,
-            IsTuple (_, _)            => 57,
-            Label (_)                 => 1,
-            Line (_)                  => 153,
-            Move (_, _)               => 64,
-            Put (_)                   => 71,
-            PutTuple (_, _)           => 70,
-            Return                    => 19,
-            TestArity (_, _, _)       => 58,
-            TestHeap (_, _)           => 16
+    fn from_u8(code: u8) -> Option<BEAMOpcode> {
+        match code {
+            1	=> Some ( BEAMOpcode::label ),
+            2	=> Some ( BEAMOpcode::func_info ),
+            3	=> Some ( BEAMOpcode::int_code_end ),
+            6	=> Some ( BEAMOpcode::call_only ),
+            16	=> Some ( BEAMOpcode::test_heap ),
+            19	=> Some ( BEAMOpcode::return_ ),
+            43	=> Some ( BEAMOpcode::is_eq_exact ),
+            57	=> Some ( BEAMOpcode::is_tuple ),
+            58	=> Some ( BEAMOpcode::test_arity ),
+            64	=> Some ( BEAMOpcode::move_ ),
+            66	=> Some ( BEAMOpcode::get_tuple_element ),
+            70	=> Some ( BEAMOpcode::put_tuple ),
+            71	=> Some ( BEAMOpcode::put ),
+            78	=> Some ( BEAMOpcode::call_ext_only ),
+            125	=> Some ( BEAMOpcode::gc_bif2 ),
+            153 => Some ( BEAMOpcode::line ),
+            _   => None
         }
+    }
+
+    fn arity(self) -> u8 {
+        match self {
+            BEAMOpcode::label             => 1,
+            BEAMOpcode::func_info         => 3,
+            BEAMOpcode::int_code_end      => 0,
+            BEAMOpcode::call_only         => 2,
+            BEAMOpcode::test_heap         => 2,
+            BEAMOpcode::return_           => 0,
+            BEAMOpcode::is_eq_exact       => 3,
+            BEAMOpcode::is_tuple          => 2,
+            BEAMOpcode::test_arity        => 3,
+            BEAMOpcode::move_             => 2,
+            BEAMOpcode::get_tuple_element => 3,
+            BEAMOpcode::put_tuple         => 2,
+            BEAMOpcode::put               => 1,
+            BEAMOpcode::call_ext_only     => 2,
+            BEAMOpcode::gc_bif2           => 6,
+            BEAMOpcode::line              => 1
+        }
+    }
+
+    // Hacky, but this way this function doesn't have to updated
+    // each time a new opcode is added.
+    fn max_opcode() -> u8 {
+        let mut code = 255;
+        while code > 0 {
+            match BEAMOpcode::from_u8(code) {
+                None => { code -= 1; continue },
+                _ => break
+            }
+        }
+        assert!(code > 0, "max valid opcode cannot be 0!");
+        code
     }
 
 }
 
+#[test]
+fn test_max_opcode() {
+    assert_eq!( 153, BEAMOpcode::max_opcode() );
+}
+
+trait BEAMOps<T> {
+    fn call_ext_only()      -> T;
+    fn call_only()          -> T;
+    fn func_info()          -> T;
+    fn gc_bif2()            -> T;
+    fn get_tuple_element()  -> T;
+    fn int_code_end()       -> T;
+    fn is_eq_exact()        -> T;
+    fn is_tuple()           -> T;
+    fn label()              -> T;
+    fn line()               -> T;
+    fn move_()              -> T;
+    fn put()                -> T;
+    fn put_tuple()          -> T;
+    fn return_()            -> T;
+    fn test_arity()         -> T;
+    fn test_heap()          -> T;
+}
+
+//struct BEAMOpcodes;
+
+//impl BEAMOps<u8> for BEAMOpcodes {
+//    fn call_ext_only()      -> u8 { 78  }
+//    fn call_only()          -> u8 { 6   }
+//    fn func_info()          -> u8 { 2   }
+//    fn gc_bif2()            -> u8 { 125 }
+//    fn get_tuple_element()  -> u8 { 66  }
+//    fn int_code_end()       -> u8 { 3   }
+//    fn is_eq_exact()        -> u8 { 43  }
+//    fn is_tuple()           -> u8 { 57  }
+//    fn label()              -> u8 { 1   }
+//    fn line()               -> u8 { 153 }
+//    fn move_()              -> u8 { 64  }
+//    fn put()                -> u8 { 71  }
+//    fn put_tuple()          -> u8 { 70  }
+//    fn return_()            -> u8 { 19  }
+//    fn test_arity()         -> u8 { 58  }
+//    fn test_heap()          -> u8 { 16  }
+//}
+
 pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
-    &[(0,("(placeholder)",0)),
+    &[(0,("(invalid opcode)",0)),
       (1,("label",1)),
       (2,("func_info",3)),
       (3,("int_code_end",0)),
@@ -478,23 +473,23 @@ pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
       (157,("has_map_fields",3)),
       (158,("get_map_elements",3))];
 
-#[[test]
-fn op_type_index_test() {
-    assert_eq!(
-    CallExtOnly (0, 0)
-        CallOnly (0, 0)
-        FuncInfo (0, 0, 0)
-        GcBif2 (0, 0, 0, 0, 0, 0)
-        GetTupleElement (0, 0, 0)
-        IntCodeEnd
-        IsEqExact (0, 0, 0)
-        IsTuple (0, 0)
-        Label (0)
-        Line (0)
-        Move (0, 0)
-        Put (0)
-        PutTuple (0, 0)
-        Return
-        TestArity (0, 0, 0)
-        TestHeap (0, 0)
-}
+//#[[test]
+//fn op_type_index_test() {
+//    assert_eq!(
+//    CallExtOnly (0, 0)
+//        CallOnly (0, 0)
+//        FuncInfo (0, 0, 0)
+//        GcBif2 (0, 0, 0, 0, 0, 0)
+//        GetTupleElement (0, 0, 0)
+//        IntCodeEnd
+//        IsEqExact (0, 0, 0)
+//        IsTuple (0, 0)
+//        Label (0)
+//        Line (0)
+//        Move (0, 0)
+//        Put (0)
+//        PutTuple (0, 0)
+//        Return
+//        TestArity (0, 0, 0)
+//        TestHeap (0, 0)
+//}
