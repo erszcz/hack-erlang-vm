@@ -136,10 +136,10 @@ fn format_code(code_chunk: &dream::code::CodeChunk) -> String {
     s.push_str(&format!("n_labels        : {}\n", code_chunk.n_labels));
     s.push_str(&format!("n_functions     : {}\n", code_chunk.n_functions));
     s.push_str(&format!("code            :\n"));
-    for (i, op) in code_chunk.operations().enumerate() {
+    for (i, op) in code_chunk.code.iter().enumerate() {
         let sep = if i == 0 { "" } else { "\n" };
         s.push_str(&format!("{}  {} {} {} {:?}",
-                            sep, i, op.name, op.args.len(), op.args))
+                            sep, i, op.name(), op.args.len(), op.args))
     }
     s
 }

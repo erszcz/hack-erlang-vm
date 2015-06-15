@@ -18,7 +18,7 @@ pub struct CodeChunk {
 
     // Possibly more data here depending on `info_fields_len` value.
 
-    pub code:               Vec<u8>
+    pub code:               Vec<Op>
 }
 
 #[derive(Debug)]
@@ -71,7 +71,7 @@ impl CodeChunk {
     }
 
     pub fn operations(&self) -> CodeOpIterator {
-        CodeOpIterator { i: 0, code: &self.code }
+        CodeOpIterator { i: 0 }
     }
 
 }
@@ -82,8 +82,37 @@ impl CodeChunk {
 //   use a macro in test to avoid opcode name repetition and learn how
 //   to stringify identifiers in macros
 
-fn load_bytecode(bytecode: &[u8]) -> Result<Vec<u8>, Error> {
-    Ok (bytecode.to_vec())
+fn load_bytecode(bytecode: &[u8]) -> Result<Vec<Op>, Error> {
+    let mut i = 0;
+    let mut opcodes = vec![];
+    while i < bytecode.len() {
+        match load_operation(&mut i, bytecode) {
+            Ok (op) => opcodes.push(op),
+            Err (reason) => return Err (reason)
+        }
+    }
+    Ok (opcodes)
+}
+
+fn load_operation(pi: &mut usize,
+                  bytecode: &[u8]) -> Result<Op, Error> {
+    let i = *pi;
+    BEAMOpcode::from_u8(bytecode[i])
+               .ok_or(Error::UnsupportedOpcode(bytecode[i] as u32))
+               .and_then(|opcode| {
+                   load_args(opcode, pi, bytecode)
+                   .map(|args| Op { code: opcode, args: args } )
+               })
+}
+
+fn load_args(opcode: BEAMOpcode, pi: &mut usize,
+             bytecode: &[u8]) -> Result<Vec<u8>, Error> {
+    let from = *pi + 1;
+    let to = from + opcode.arity() as usize;
+    *pi = to;
+    if to > bytecode.len()
+        { return Err ( Error::InvalidChunk ) }
+    Ok (bytecode[from..to].to_vec())
 }
 
 // This is funny.
@@ -113,28 +142,39 @@ pub struct Op {
     pub args: Vec<u8>
 }
 
-pub struct CodeOpIterator<'c> {
-    i: usize,
-    code: &'c [u8]
+impl Op {
+    pub fn name(&self) -> &'static str {
+        (OPERATIONS[self.code as usize].1).0
+    }
 }
 
-impl<'c> Iterator for CodeOpIterator<'c> {
+pub struct CodeOpIterator {
+    i: usize,
+}
+
+impl Iterator for CodeOpIterator {
     type Item = Op;
 
     fn next(&mut self) -> Option<Op> {
-        if self.i >= self.code.len()
-            { return None }
-        let opcode = self.code[self.i];
-        let opdef = OPERATIONS[opcode as usize];
-        let opname = (opdef.1).0;
-        let nargs = (opdef.1).1 as usize;
-        let from = self.i + 1;
-        let to = from + nargs;
-        self.i = to;
-        if to > self.code.len()
-            { return None }
-        Some (Op { name: opname,
-                   args: self.code[from .. to].to_vec() })
+        if self.i < 3 {
+            self.i += 1;
+            BEAMOpcode::from_u8(1)
+                       .and_then(|c| Some (Op { code: c, args: vec![1] }) )
+        } else
+            { None }
+        //if self.i >= self.code.len()
+        //    { return None }
+        //let opcode = self.code[self.i];
+        //let opdef = OPERATIONS[opcode as usize];
+        //let opname = (opdef.1).0;
+        //let nargs = (opdef.1).1 as usize;
+        //let from = self.i + 1;
+        //let to = from + nargs;
+        //self.i = to;
+        //if to > self.code.len()
+        //    { return None }
+        //Some (Op { code: opcode,
+        //           args: self.code[from .. to].to_vec() })
     }
 
 }
@@ -186,8 +226,8 @@ impl<'c> Iterator for CodeOpIterator<'c> {
 //}
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
-enum BEAMOpcode {
+#[derive(Clone, Copy, Debug)]
+pub enum BEAMOpcode {
     label               = 1,
     func_info           = 2,
     int_code_end        = 3,
