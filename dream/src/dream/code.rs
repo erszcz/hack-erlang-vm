@@ -77,7 +77,7 @@ impl CodeChunk {
 }
 
 // TODO:
-// - load_bytecode
+// - [x] load_bytecode
 // - BEAMOpcode name and test for checking that names and codes aren't messed up;
 //   use a macro in test to avoid opcode name repetition and learn how
 //   to stringify identifiers in macros
@@ -147,83 +147,6 @@ impl Op {
         (OPERATIONS[self.code as usize].1).0
     }
 }
-
-pub struct CodeOpIterator {
-    i: usize,
-}
-
-impl Iterator for CodeOpIterator {
-    type Item = Op;
-
-    fn next(&mut self) -> Option<Op> {
-        if self.i < 3 {
-            self.i += 1;
-            BEAMOpcode::from_u8(1)
-                       .and_then(|c| Some (Op { code: c, args: vec![1] }) )
-        } else
-            { None }
-        //if self.i >= self.code.len()
-        //    { return None }
-        //let opcode = self.code[self.i];
-        //let opdef = OPERATIONS[opcode as usize];
-        //let opname = (opdef.1).0;
-        //let nargs = (opdef.1).1 as usize;
-        //let from = self.i + 1;
-        //let to = from + nargs;
-        //self.i = to;
-        //if to > self.code.len()
-        //    { return None }
-        //Some (Op { code: opcode,
-        //           args: self.code[from .. to].to_vec() })
-    }
-
-}
-
-// TODO: this is just a subset of BEAM opcodes!
-//#[derive(Debug)]
-//enum OpType {
-//    CallExtOnly     (u8, u8),
-//    CallOnly        (u8, u8),
-//    FuncInfo        (u8, u8, u8),
-//    GcBif2          (u8, u8, u8, u8, u8, u8),
-//    GetTupleElement (u8, u8, u8),
-//    IntCodeEnd,
-//    IsEqExact       (u8, u8, u8),
-//    IsTuple         (u8, u8),
-//    Label           (u8),
-//    Line            (u8),
-//    Move            (u8, u8),
-//    Put             (u8),
-//    PutTuple        (u8, u8),
-//    Return,
-//    TestArity       (u8, u8, u8),
-//    TestHeap        (u8, u8)
-//}
-
-//impl OpType {
-
-//    fn code(self) -> usize {
-//        match self {
-//            CallExtOnly (_, _)        => 78,
-//            CallOnly (_, _)           => 6,
-//            FuncInfo (_, _, _)        => 2,
-//            GcBif2 (_, _, _, _, _, _) => 125,
-//            GetTupleElement (_, _, _) => 66,
-//            IntCodeEnd                => 3,
-//            IsEqExact (_, _, _)       => 43,
-//            IsTuple (_, _)            => 57,
-//            Label (_)                 => 1,
-//            Line (_)                  => 153,
-//            Move (_, _)               => 64,
-//            Put (_)                   => 71,
-//            PutTuple (_, _)           => 70,
-//            Return                    => 19,
-//            TestArity (_, _, _)       => 58,
-//            TestHeap (_, _)           => 16
-//        }
-//    }
-
-//}
 
 #[allow(non_camel_case_types)]
 #[derive(Clone, Copy, Debug)]
@@ -330,27 +253,6 @@ trait BEAMOps<T> {
     fn test_arity()         -> T;
     fn test_heap()          -> T;
 }
-
-//struct BEAMOpcodes;
-
-//impl BEAMOps<u8> for BEAMOpcodes {
-//    fn call_ext_only()      -> u8 { 78  }
-//    fn call_only()          -> u8 { 6   }
-//    fn func_info()          -> u8 { 2   }
-//    fn gc_bif2()            -> u8 { 125 }
-//    fn get_tuple_element()  -> u8 { 66  }
-//    fn int_code_end()       -> u8 { 3   }
-//    fn is_eq_exact()        -> u8 { 43  }
-//    fn is_tuple()           -> u8 { 57  }
-//    fn label()              -> u8 { 1   }
-//    fn line()               -> u8 { 153 }
-//    fn move_()              -> u8 { 64  }
-//    fn put()                -> u8 { 71  }
-//    fn put_tuple()          -> u8 { 70  }
-//    fn return_()            -> u8 { 19  }
-//    fn test_arity()         -> u8 { 58  }
-//    fn test_heap()          -> u8 { 16  }
-//}
 
 pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
     &[(0,("(invalid opcode)",0)),
@@ -512,24 +414,3 @@ pub const OPERATIONS: &'static [(u8, (&'static str, u8))] =
       (156,("is_map",2)),
       (157,("has_map_fields",3)),
       (158,("get_map_elements",3))];
-
-//#[[test]
-//fn op_type_index_test() {
-//    assert_eq!(
-//    CallExtOnly (0, 0)
-//        CallOnly (0, 0)
-//        FuncInfo (0, 0, 0)
-//        GcBif2 (0, 0, 0, 0, 0, 0)
-//        GetTupleElement (0, 0, 0)
-//        IntCodeEnd
-//        IsEqExact (0, 0, 0)
-//        IsTuple (0, 0)
-//        Label (0)
-//        Line (0)
-//        Move (0, 0)
-//        Put (0)
-//        PutTuple (0, 0)
-//        Return
-//        TestArity (0, 0, 0)
-//        TestHeap (0, 0)
-//}
