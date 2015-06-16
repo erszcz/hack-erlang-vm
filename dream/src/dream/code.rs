@@ -70,10 +70,6 @@ impl CodeChunk {
         })
     }
 
-    pub fn operations(&self) -> CodeOpIterator {
-        CodeOpIterator { i: 0 }
-    }
-
 }
 
 // TODO:
