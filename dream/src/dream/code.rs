@@ -110,7 +110,6 @@ fn load_args(opcode: BEAMOpcode, pi: &mut usize,
     *pi = to;
     if to > bytecode.len()
         { return Err ( Error::InvalidChunk ) }
-    print!("{:?} ", opcode);
     transform_args(opcode.arity(), &bytecode[from..to])
 }
 
@@ -132,10 +131,8 @@ fn transform_args(nargs: u8, bytes: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
 fn transform_arg(arg: u8, rest: &[u8]) -> Result<((OpArg, u32), usize), Error> {
     if let Some (tag) = OpArg::from_u8(arg & 0b111) {
         match tag {
-            OpArg::z => {
-                println!("arg: {} rest: {:?}", arg, rest);
-                panic!("complex terms (aka literals) not supported")
-            },
+            OpArg::z =>
+                panic!("complex terms (aka literals) not supported"),
             OpArg::u | OpArg::i | OpArg::a | OpArg::x | OpArg::y | OpArg::f =>
                 value(arg, rest).map(|(v, consumed)| ((tag, v), consumed) )
         }
