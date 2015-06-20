@@ -30,7 +30,9 @@ pub enum Error {
     InvalidChunk,
 
     // A module uses higher opcodes than this runtime undertands.
-    UnsupportedOpcode(u32)
+    UnsupportedOpcode(u32),
+
+    InvalidTag
 }
 
 fn unexpected_chunk(expected: &str, got: &str) -> Result<CodeChunk, Error> {
@@ -102,13 +104,56 @@ fn load_operation(pi: &mut usize,
 }
 
 fn load_args(opcode: BEAMOpcode, pi: &mut usize,
-             bytecode: &[u8]) -> Result<Vec<u8>, Error> {
+             bytecode: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
     let from = *pi + 1;
     let to = from + opcode.arity() as usize;
     *pi = to;
     if to > bytecode.len()
         { return Err ( Error::InvalidChunk ) }
-    Ok (bytecode[from..to].to_vec())
+    print!("{:?} ", opcode);
+    transform_args(opcode.arity(), &bytecode[from..to])
+}
+
+fn transform_args(nargs: u8, bytes: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
+    let mut i = 0;
+    let mut opargs = vec![];
+    while i < bytes.len() {
+        match transform_arg(bytes[i], &bytes[i+1..]) {
+            Ok ((oparg, nbytes)) => {
+                i += nbytes;
+                opargs.push(oparg)
+            },
+            Err (reason) => return Err (reason)
+        }
+    }
+    Ok (opargs)
+}
+
+fn transform_arg(arg: u8, rest: &[u8]) -> Result<((OpArg, u32), usize), Error> {
+    if let Some (tag) = OpArg::from_u8(arg & 0b111) {
+        match tag {
+            OpArg::z => {
+                println!("arg: {} rest: {:?}", arg, rest);
+                panic!("complex terms (aka literals) not supported")
+            },
+            OpArg::u | OpArg::i | OpArg::a | OpArg::x | OpArg::y | OpArg::f =>
+                value(arg, rest).map(|(v, consumed)| ((tag, v), consumed) )
+        }
+    } else {
+        Err (Error::InvalidTag)
+    }
+}
+
+fn value(arg: u8, rest: &[u8]) -> Result<(u32, usize), Error> {
+    if arg & 0b1000 == 0 {
+        Ok ( ((arg >> 4) as u32, 1) )
+    } else if arg & 0x10 == 0 {
+        let tmp = (arg & 0b1110_0000) as u32;
+        let n = (tmp << 3) | rest[0] as u32;
+        Ok ( (n, 2) )
+    } else {
+        Err (Error::InvalidTag)
+    }
 }
 
 // This is funny.
@@ -135,7 +180,7 @@ fn u32_from_be(bytes: &[u8]) -> u32 {
 #[derive(Debug)]
 pub struct Op {
     pub code: BEAMOpcode,
-    pub args: Vec<u8>
+    pub args: Vec<(OpArg, u32)>
 }
 
 impl Op {
@@ -231,6 +276,35 @@ impl BEAMOpcode {
         }
         assert!(code > 0, "max valid opcode cannot be 0!");
         code
+    }
+
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+pub enum OpArg {
+    u,
+    i,
+    a,
+    x,
+    y,
+    f,
+    z
+}
+
+impl OpArg {
+
+    fn from_u8(tag: u8) -> Option<OpArg> {
+        match tag {
+            0 => Some (OpArg::u),
+            1 => Some (OpArg::i),
+            2 => Some (OpArg::a),
+            3 => Some (OpArg::x),
+            4 => Some (OpArg::y),
+            5 => Some (OpArg::f),
+            7 => Some (OpArg::z),
+            _ => None
+        }
     }
 
 }
