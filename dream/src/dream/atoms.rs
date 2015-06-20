@@ -1,10 +1,6 @@
 use beam;
 use std::collections::HashMap;
 
-// TODO: remove `allow` clause once the bug with unused, though used, Path is solved
-#[allow(unused_imports)]
-use std::path::Path;
-
 pub type AtomIndex = usize;
 pub type Atom = String;
 
