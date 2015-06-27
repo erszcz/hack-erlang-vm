@@ -104,7 +104,7 @@ fn load_operation(pi: &mut usize,
 }
 
 fn load_args(opcode: BEAMOpcode, pi: &mut usize,
-             bytecode: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
+             bytecode: &[u8]) -> Result<Vec<(ArgTag, u32)>, Error> {
     let from = *pi + 1;
     let to = from + opcode.arity() as usize;
     *pi = to;
@@ -113,7 +113,7 @@ fn load_args(opcode: BEAMOpcode, pi: &mut usize,
     transform_args(opcode.arity(), &bytecode[from..to])
 }
 
-fn transform_args(nargs: u8, bytes: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
+fn transform_args(nargs: u8, bytes: &[u8]) -> Result<Vec<(ArgTag, u32)>, Error> {
     let mut i = 0;
     let mut opargs = vec![];
     while i < bytes.len() {
@@ -128,12 +128,12 @@ fn transform_args(nargs: u8, bytes: &[u8]) -> Result<Vec<(OpArg, u32)>, Error> {
     Ok (opargs)
 }
 
-fn transform_arg(arg: u8, rest: &[u8]) -> Result<((OpArg, u32), usize), Error> {
-    if let Some (tag) = OpArg::from_u8(arg & 0b111) {
+fn transform_arg(arg: u8, rest: &[u8]) -> Result<((ArgTag, u32), usize), Error> {
+    if let Some (tag) = ArgTag::from_u8(arg & 0b111) {
         match tag {
-            OpArg::z =>
+            ArgTag::z =>
                 panic!("complex terms (aka literals) not supported"),
-            OpArg::u | OpArg::i | OpArg::a | OpArg::x | OpArg::y | OpArg::f =>
+            ArgTag::u | ArgTag::i | ArgTag::a | ArgTag::x | ArgTag::y | ArgTag::f =>
                 value(arg, rest).map(|(v, consumed)| ((tag, v), consumed) )
         }
     } else {
@@ -177,7 +177,7 @@ fn u32_from_be(bytes: &[u8]) -> u32 {
 #[derive(Debug)]
 pub struct Op {
     pub code: BEAMOpcode,
-    pub args: Vec<(OpArg, u32)>
+    pub args: Vec<(ArgTag, u32)>
 }
 
 impl Op {
@@ -279,7 +279,7 @@ impl BEAMOpcode {
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub enum OpArg {
+pub enum ArgTag {
     u,
     i,
     a,
@@ -289,17 +289,17 @@ pub enum OpArg {
     z
 }
 
-impl OpArg {
+impl ArgTag {
 
-    fn from_u8(tag: u8) -> Option<OpArg> {
+    fn from_u8(tag: u8) -> Option<ArgTag> {
         match tag {
-            0 => Some (OpArg::u),
-            1 => Some (OpArg::i),
-            2 => Some (OpArg::a),
-            3 => Some (OpArg::x),
-            4 => Some (OpArg::y),
-            5 => Some (OpArg::f),
-            7 => Some (OpArg::z),
+            0 => Some (ArgTag::u),
+            1 => Some (ArgTag::i),
+            2 => Some (ArgTag::a),
+            3 => Some (ArgTag::x),
+            4 => Some (ArgTag::y),
+            5 => Some (ArgTag::f),
+            7 => Some (ArgTag::z),
             _ => None
         }
     }
