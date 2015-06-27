@@ -135,8 +135,9 @@ fn print_labels(args: &[String]) {
     let path = Path::new(&arg0);
     let mut loader = dream::loader::State::new(path).unwrap();
     dream::loader::load_code(&mut loader);
-    let code = loader.code.unwrap();
-    println!("{}", format_code(&code));
+    dream::loader::load_labels(&mut loader);
+    let labels = loader.labels.unwrap();
+    println!("{}", format_labels(&labels));
 }
 
 fn print_replaced(args: &[String]) {
@@ -162,6 +163,15 @@ fn format_code(code: &Vec<dream::code::Op>) -> String {
         let sep = if i == 0 { "" } else { "\n" };
         s.push_str(&format!("{}  {:5} {} {:?}",
                             sep, i, op.name(), op.args))
+    }
+    s
+}
+
+fn format_labels(labels: &Vec<(dream::Label, dream::CodeIdx)>) -> String {
+    let mut s = String::new();
+    for (i, &(label, idx)) in labels.iter().enumerate() {
+        let sep = if i == 0 { "" } else { "\n" };
+        s.push_str(&format!("{}label {:4} -> code index {:5}", sep, label, idx));
     }
     s
 }

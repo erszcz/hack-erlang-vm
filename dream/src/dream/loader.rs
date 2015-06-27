@@ -1,8 +1,6 @@
 use super::*;
-use super::code::CodeChunk;
+use super::code::{ ArgTag, BEAMOpcode, CodeChunk };
 use std::path::Path;
-
-pub type Label = u32;
 
 pub struct State<'a> {
     pub module_name:    &'a str,
@@ -74,6 +72,34 @@ pub fn load_code<'a>(loader: &mut State) -> LoadResult<'a> {
                                      .map_err(|_| Error::ChunkLoadError));
     loader.code = Some (code_chunk.code);
     Ok (())
+}
+
+pub fn load_labels<'a>(loader: &mut State) -> LoadResult<'a> {
+    let mut labels = vec![];
+    if let Some (ref code) = loader.code {
+        for (i, op) in code.iter().enumerate() {
+            try! (load_label(&mut labels, i, op));
+        }
+        loader.labels = Some (labels);
+        Ok (())
+    } else {
+        Err (Error::LoaderError)
+    }
+}
+
+fn load_label<'a>(labels: &mut Vec<(Label, CodeIdx)>, i: usize, op: &code::Op)
+    -> LoadResult<'a>
+{
+    if let (BEAMOpcode::label, ref args) = (op.code, &op.args) {
+        if let (ArgTag::u, idx) = args[0] {
+            labels.push((idx, i as u32));
+            Ok (())
+        } else {
+            Err (Error::LoaderError)
+        }
+    } else {
+        Ok (())
+    }
 }
 
 fn module_name(path: &Path) -> Result<&str, Error> {

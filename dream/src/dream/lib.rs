@@ -8,6 +8,8 @@ pub use atoms::AtomTable;
 pub use beam::{ Beam, Chunk };
 pub use exports::{ CodeIdx, ExportTable };
 
+pub type Label = u32;
+
 use std::path::Path;
 
 pub struct Emu {
