@@ -69,7 +69,9 @@ fn dispatch_module(subcommand: &str, args: &[String]) {
     match subcommand {
         "atoms" => list_module_atoms(args),
         "exports" => list_module_exports(args),
-        "code" => print_code(args),
+        "code-chunk" => print_code(args),
+        "code-labels" => print_labels(args),
+        "code-replaced" => print_replaced(args),
         _ => panic!(format!("unrecognized module subcommand: {:?}", subcommand))
     }
 }
@@ -123,10 +125,25 @@ fn print_code(args: &[String]) {
     let beam = Beam::from_file(path).unwrap();
     let raw_code_chunk = beam.chunk("Code").expect("no Code chunk");
     let code_chunk = dream::code::CodeChunk::from_chunk(&raw_code_chunk).unwrap();
-    println!("{}", format_code(&code_chunk));
+    println!("{}{}",
+             format_code_metadata(&code_chunk),
+             format_code(&code_chunk.code));
 }
 
-fn format_code(code_chunk: &dream::code::CodeChunk) -> String {
+fn print_labels(args: &[String]) {
+    let arg0 = args[0].to_string();
+    let path = Path::new(&arg0);
+    let mut loader = dream::loader::State::new(path).unwrap();
+    dream::loader::load_code(&mut loader);
+    let code = loader.code.unwrap();
+    println!("{}", format_code(&code));
+}
+
+fn print_replaced(args: &[String]) {
+    panic!("not implemented");
+}
+
+fn format_code_metadata(code_chunk: &dream::code::CodeChunk) -> String {
     let mut s = String::new();
     s.push_str(&format!("id              : {}\n", code_chunk.id));
     s.push_str(&format!("len             : {}\n", code_chunk.len));
@@ -136,7 +153,12 @@ fn format_code(code_chunk: &dream::code::CodeChunk) -> String {
     s.push_str(&format!("n_labels        : {}\n", code_chunk.n_labels));
     s.push_str(&format!("n_functions     : {}\n", code_chunk.n_functions));
     s.push_str(&format!("code            :\n"));
-    for (i, op) in code_chunk.code.iter().enumerate() {
+    s
+}
+
+fn format_code(code: &Vec<dream::code::Op>) -> String {
+    let mut s = String::new();
+    for (i, op) in code.iter().enumerate() {
         let sep = if i == 0 { "" } else { "\n" };
         s.push_str(&format!("{}  {:5} {} {:?}",
                             sep, i, op.name(), op.args))

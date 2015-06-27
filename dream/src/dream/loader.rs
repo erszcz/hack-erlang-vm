@@ -3,16 +3,16 @@ use super::*;
 use super::code::CodeChunk;
 use std::path::Path;
 
-type Label = u32;
-type CodeIdx = u32;
+pub type Label = u32;
+pub type CodeIdx = u32;
 
 pub struct State<'a> {
-    module_name:    &'a str,
-    beam_file:      Beam,
-    atoms:          Option<AtomTable>,
-    code:           Option<Vec<code::Op>>,
-    labels:         Option<Vec<(Label, CodeIdx)>>,
-    exports:        Option<ExportTable>
+    pub module_name:    &'a str,
+    pub beam_file:      Beam,
+    pub atoms:          Option<AtomTable>,
+    pub code:           Option<Vec<code::Op>>,
+    pub labels:         Option<Vec<(Label, CodeIdx)>>,
+    pub exports:        Option<ExportTable>
 }
 
 impl<'a> State<'a> {
@@ -29,6 +29,7 @@ impl<'a> State<'a> {
 
 }
 
+#[derive(Debug)]
 pub enum Error<'a> {
     InvalidPath(&'a Path),
 
