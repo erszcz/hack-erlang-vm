@@ -2,10 +2,12 @@ pub mod atoms;
 pub mod beam;
 pub mod code;
 pub mod exports;
+pub mod loader;
 
-use atoms::AtomTable;
-use beam::{ Beam, Chunk };
-use exports::ExportTable;
+pub use atoms::AtomTable;
+pub use beam::{ Beam, Chunk };
+pub use exports::ExportTable;
+
 use std::path::Path;
 
 pub struct Emu {

@@ -42,8 +42,8 @@ enum Subcommand {
 
 fn main() {
     let args: Args = Docopt::new(USAGE)
-                      .and_then(|d| d.decode())
-                      .unwrap_or_else(|e| e.exit());
+                            .and_then(|d| d.decode())
+                            .unwrap_or_else(|e| e.exit());
     // Either some command is specified...
     if let Some(command) = args.arg_command {
         match command {
