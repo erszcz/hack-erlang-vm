@@ -7,10 +7,10 @@ pub type Module = atoms::AtomIndex;
 pub type Function = atoms::AtomIndex;
 pub type Arity = usize;
 pub type MFA = (Module, Function, Arity);
-pub type CodeIndex = usize;
+pub type CodeIdx = u32;
 
 pub struct ExportTable {
-    mfa_to_ci: HashMap<MFA, CodeIndex>
+    mfa_to_ci: HashMap<MFA, CodeIdx>
 }
 
 impl ExportTable {
@@ -19,18 +19,18 @@ impl ExportTable {
         ExportTable { mfa_to_ci: HashMap::new() }
     }
 
-    pub fn put(&mut self, mfa: MFA, code_index: CodeIndex) {
+    pub fn put(&mut self, mfa: MFA, code_index: CodeIdx) {
         self.mfa_to_ci.insert(mfa, code_index);
     }
 
-    pub fn get(&self, mfa: MFA) -> Option<CodeIndex> {
+    pub fn get(&self, mfa: MFA) -> Option<CodeIdx> {
         match self.mfa_to_ci.get(&mfa) {
             Some (index) => Some (*index),
             None => None
         }
     }
 
-    pub fn list(&self) -> Vec<(MFA, CodeIndex)> {
+    pub fn list(&self) -> Vec<(MFA, CodeIdx)> {
         self.mfa_to_ci.iter().map(|(k,v)| (*k, *v)).collect()
     }
 

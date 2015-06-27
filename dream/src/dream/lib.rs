@@ -6,7 +6,7 @@ pub mod loader;
 
 pub use atoms::AtomTable;
 pub use beam::{ Beam, Chunk };
-pub use exports::ExportTable;
+pub use exports::{ CodeIdx, ExportTable };
 
 use std::path::Path;
 
@@ -60,7 +60,7 @@ fn load_exports(emu: &mut Emu, modname: &String,
         let mfa = (modname_emu_index as atoms::AtomIndex,
                    fun_emu_index as atoms::AtomIndex,
                    mod_export.arity as exports::Arity);
-        exports.put(mfa, mod_export.label as usize);
+        exports.put(mfa, mod_export.label);
     }
 }
 

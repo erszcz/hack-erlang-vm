@@ -1,10 +1,8 @@
 use super::*;
-
 use super::code::CodeChunk;
 use std::path::Path;
 
 pub type Label = u32;
-pub type CodeIdx = u32;
 
 pub struct State<'a> {
     pub module_name:    &'a str,
