@@ -1,6 +1,9 @@
 use beam;
 use std::collections::HashMap;
 
+#[cfg(test)]
+use std::path::Path;
+
 pub type AtomIndex = usize;
 pub type Atom = String;
 
