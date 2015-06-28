@@ -1,4 +1,9 @@
-use super::*;
+use super::{ AtomTable,
+             Beam,
+             CodeIdx,
+             code,
+             ExportTable,
+             Label };
 use super::code::{ ArgTag, BEAMOpcode, CodeChunk };
 use std::path::Path;
 
@@ -28,16 +33,10 @@ impl<'a> State<'a> {
 #[derive(Debug)]
 pub enum Error<'a> {
     InvalidPath(&'a Path),
-
     BeamReadError,
-
-    // (module, file)
-    ModuleNameMismatch(String, String),
-
+    ModuleNameMismatch(/* module: */ String, /* file: */ String),
     ChunkNotFound(&'a str),
-
     ChunkLoadError,
-
     LoaderError
 }
 
