@@ -141,7 +141,14 @@ fn print_labels(args: &[String]) {
 }
 
 fn print_replaced(args: &[String]) {
-    panic!("not implemented");
+    let arg0 = args[0].to_string();
+    let path = Path::new(&arg0);
+    let mut loader = dream::loader::State::new(path).unwrap();
+    dream::loader::load_code(&mut loader);
+    dream::loader::load_labels(&mut loader);
+    dream::loader::replace_jumps(&mut loader);
+    let code = loader.code.unwrap();
+    println!("{}", format_code(&code));
 }
 
 fn format_code_metadata(code_chunk: &dream::code::CodeChunk) -> String {

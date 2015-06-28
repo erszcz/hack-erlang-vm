@@ -101,6 +101,28 @@ fn load_label<'a>(labels: &mut Vec<(Label, CodeIdx)>, i: usize, op: &code::Op)
     }
 }
 
+pub fn replace_jumps<'a>(loader: &mut State) -> LoadResult<'a> {
+    if let (&Some (ref labels), &mut Some (ref mut code)) = (&loader.labels,
+                                                             &mut loader.code)
+    {
+        for op in code.iter_mut()
+            { replace_jump(labels, &mut op.args) }
+        Ok (())
+    } else {
+        Err (Error::LoaderError)
+    }
+}
+
+fn replace_jump(labels: &Vec<(Label, CodeIdx)>, args: &mut [(ArgTag, CodeIdx)]) {
+    for &mut (ref tag, ref mut arg) in args.iter_mut() {
+        match tag {
+            &ArgTag::f if *arg != 0 =>
+                *arg = labels[(*arg - 1) as usize].1,
+            _ => {}
+        }
+    }
+}
+
 fn module_name(path: &Path) -> Result<&str, Error> {
     path.file_stem()
         .ok_or(Error::InvalidPath (path))
